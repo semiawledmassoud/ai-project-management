@@ -1,0 +1,70 @@
+{
+  "features": [
+    "method_enc",
+    "team_size",
+    "budget_ratio",
+    "progress",
+    "velocity",
+    "open_tickets",
+    "absences",
+    "overscoped",
+    "team_issues",
+    "tech_debt",
+    "scope_creep",
+    "key_person_risk",
+    "unclear_requirements",
+    "meetings_per_week",
+    "doc_score",
+    "duration_planned",
+    "sprints_count"
+  ],
+  "n_features": 17,
+  "n_train": 1600,
+  "n_total": 2000,
+  "score_model": {
+    "mae": 0.579,
+    "r2": 0.865,
+    "cv_r2": 0.852
+  },
+  "success_model": {
+    "accuracy": 0.89
+  },
+  "risk_model": {
+    "accuracy": 0.68
+  },
+  "delay_model": {
+    "mae": 8.27,
+    "r2": 0.668
+  },
+  "feature_importances": {
+    "progress": 0.1861,
+    "velocity": 0.1779,
+    "budget_ratio": 0.1161,
+    "overscoped": 0.1105,
+    "absences": 0.0882,
+    "team_issues": 0.0731,
+    "open_tickets": 0.0701,
+    "scope_creep": 0.036,
+    "doc_score": 0.0324,
+    "unclear_requirements": 0.0177,
+    "duration_planned": 0.0153,
+    "key_person_risk": 0.0151,
+    "method_enc": 0.0142,
+    "team_size": 0.0133,
+    "tech_debt": 0.0126,
+    "sprints_count": 0.012,
+    "meetings_per_week": 0.0093
+  },
+  "methodology_map": {
+    "Agile": 0,
+    "Kanban": 1,
+    "Scrum": 2,
+    "Waterfall": 3
+  },
+  "risk_categories": [
+    "faible",
+    "modéré",
+    "élevé",
+    "critique"
+  ]
+}

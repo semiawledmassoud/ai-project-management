@@ -1,0 +1,17 @@
+const express = require("express");
+const router = express.Router();
+const auth = require("../middleware/auth");
+const Comment = require("../models/Comment");
+router.get("/:projectId", auth, async (req, res) => {
+  try { const c = await Comment.find({ projectId: req.params.projectId }).sort({ createdAt: -1 }); res.json(c); }
+  catch (err) { res.status(500).json({ message: err.message }); }
+});
+router.post("/:projectId", auth, async (req, res) => {
+  try { const c = new Comment({ projectId: req.params.projectId, userId: req.user.id, userName: req.user.name, text: req.body.text }); await c.save(); res.json(c); }
+  catch (err) { res.status(500).json({ message: err.message }); }
+});
+router.delete("/:id", auth, async (req, res) => {
+  try { await Comment.findByIdAndDelete(req.params.id); res.json({ message: "Supprime" }); }
+  catch (err) { res.status(500).json({ message: err.message }); }
+});
+module.exports = router;

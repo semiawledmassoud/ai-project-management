@@ -1,0 +1,8 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #0D0F14; --bg2: #131620; --bg3: #1A1D28; --bg4: #22263A;
+  --border: #252A3D; --text: #E8EAF6; --text2: #9BA3C8; --text3: #5C6490;
+  --blue: #4F8FFF; --green: #34D399; --amber: #F59E0B;
+  --red: #F87171; --purple: #A78BFA;
+}
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
