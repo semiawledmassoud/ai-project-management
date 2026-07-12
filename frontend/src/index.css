@@ -6,3 +6,263 @@
   --red: #F87171; --purple: #A78BFA;
 }
 body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; }
+
+.auth-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0b1020 0%, #111827 100%);
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 62%);
+  filter: blur(70px);
+  animation: authGlow 14s ease-in-out infinite alternate;
+}
+
+.auth-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.05) 45%, transparent 100%);
+  transform: translateX(-100%);
+  animation: authSweep 7s linear infinite;
+}
+
+.auth-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.auth-grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.95), transparent 90%);
+  opacity: 0.2;
+}
+
+.auth-card {
+  position: relative;
+  z-index: 2;
+  width: 380px;
+  background: rgba(19, 22, 32, 0.82);
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 18px;
+  padding: 36px;
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.48);
+  backdrop-filter: blur(18px);
+}
+
+@keyframes authGlow {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(20px, -20px, 0) scale(1.04); }
+}
+
+@keyframes authSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(120%); }
+}
+
+.dashboard-premium {
+  animation: dashboardFade .35s ease both;
+}
+
+.dashboard-card,
+.dashboard-hero {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 55px rgba(0,0,0,0.24) !important;
+}
+
+.dashboard-kpi-card {
+  animation: dashboardLift .45s ease both;
+}
+
+.dashboard-row {
+  transition: background .16s ease, transform .16s ease;
+}
+
+.dashboard-row:hover {
+  background: rgba(79,143,255,0.045);
+}
+
+.dashboard-shortcut:hover {
+  border-color: rgba(79,143,255,0.42) !important;
+}
+
+.dashboard-primary-button {
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.dashboard-primary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(79,143,255,0.26);
+}
+
+@keyframes dashboardFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dashboardLift {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1180px) {
+  .dashboard-kpi-grid,
+  .dashboard-main-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .dashboard-kpi-grid,
+  .dashboard-main-grid,
+  .dashboard-hero {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.analysis-premium {
+  animation: analysisFade .36s ease both;
+}
+
+.analysis-results,
+.analysis-card,
+.analysis-kpi-card {
+  animation: analysisLift .44s ease both;
+}
+
+.analysis-card,
+.analysis-kpi-card,
+.analysis-metric-card,
+.analysis-recommendation,
+.analysis-action-card,
+.analysis-project-pill {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.analysis-card:hover,
+.analysis-kpi-card:hover,
+.analysis-metric-card:hover,
+.analysis-recommendation:hover,
+.analysis-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 56px rgba(2, 6, 23, 0.34) !important;
+}
+
+.analysis-project-pill:hover,
+.analysis-primary-button:hover,
+.analysis-secondary-button:hover {
+  transform: translateY(-1px);
+}
+
+.analysis-primary-button,
+.analysis-secondary-button {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.analysis-primary-button:hover {
+  box-shadow: 0 14px 30px rgba(79,143,255,0.28);
+}
+
+@keyframes analysisFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes analysisLift {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1100px) {
+  .analysis-kpi-grid,
+  .analysis-project-grid,
+  .analysis-actions-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .analysis-kpi-grid,
+  .analysis-project-grid,
+  .analysis-actions-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.risks-premium {
+  animation: risksFade .36s ease both;
+}
+
+.risks-card,
+.risks-kpi-card,
+.risks-risk-row,
+.risks-action-card {
+  animation: risksLift .42s ease both;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+
+.risks-card:hover,
+.risks-risk-row:hover,
+.risks-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 58px rgba(2, 6, 23, 0.34) !important;
+}
+
+.risks-button {
+  transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+
+.risks-button:hover {
+  transform: translateY(-1px);
+}
+
+@keyframes risksFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes risksLift {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 1180px) {
+  .risks-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .risks-main-grid,
+  .risks-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .risks-filter-grid,
+  .risks-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .risks-kpi-grid,
+  .risks-filter-grid,
+  .risks-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

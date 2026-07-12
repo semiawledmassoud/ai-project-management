@@ -117,7 +117,7 @@ export default function Profile() {
       {/* Tab Rôles */}
       {tab==='role' && (
         <div style={card}>
-          <div style={{fontSize:13, fontWeight:600, marginBottom:14}}>Système de rôles ProAI</div>
+          <div style={{fontSize:13, fontWeight:600, marginBottom:14}}>Système de rôles PREDYNEX</div>
           <div style={{display:'grid', gap:10}}>
             {Object.entries(ROLES).map(([key, r]) => (
               <div key={key} style={{background:'#1A1D28', borderRadius:8, padding:'12px 14px', border:`1px solid ${user?.role===key?r.color+'44':'#252A3D'}`, display:'flex', alignItems:'center', gap:12}}>
@@ -137,7 +137,7 @@ export default function Profile() {
             ))}
           </div>
           <div style={{marginTop:14, padding:'10px 14px', background:'rgba(79,143,255,.05)', borderRadius:8, border:'1px solid rgba(79,143,255,.12)', fontSize:12, color:'#9BA3C8'}}>
-            ℹ️ Pour changer votre rôle, contactez un administrateur ProAI.
+            ℹ️ Pour changer votre rôle, contactez un administrateur PREDYNEX.
           </div>
         </div>
       )}

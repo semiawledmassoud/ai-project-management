@@ -37,20 +37,14 @@ export default function Login() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#0D0F14'
-    }}>
-      <div style={{
-        width: 380,
-        background: '#131620',
-        border: '1px solid #252A3D',
-        borderRadius: 16,
-        padding: 36
-      }}>
+    <div className="auth-page">
+      <div className="auth-background">
+        <div className="auth-grid" />
+        <div className="auth-orb auth-orb-1" />
+        <div className="auth-orb auth-orb-2" />
+        <div className="auth-orb auth-orb-3" />
+      </div>
+      <div className="auth-card">
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{
@@ -63,7 +57,7 @@ export default function Login() {
             marginBottom: 12
           }}>P</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: '#E8EAF6' }}>
-            Connexion à ProAI
+            Connexion à PREDYNEX
           </div>
           <div style={{ fontSize: 12, color: '#5C6490', marginTop: 4 }}>
             Système IA de gestion de projet

@@ -37,9 +37,16 @@ router.post('/', auth, async (req, res) => {
   try {
     const risk = new Risk({
       ...req.body,
-      userId: req.user.id
+      userId: req.user.id,
+      history: [{
+        action: 'created',
+        status: req.body.status || 'active',
+        label: 'Risque cree',
+        at: new Date()
+      }]
     });
     await risk.save();
+    await risk.populate('projectId', 'name methodology');
     res.json(risk);
   } catch (err) {
     console.log('ERREUR POST risk:', err.message);
@@ -71,9 +78,11 @@ router.post('/save-ai/:projectId', auth, async (req, res) => {
         severity:    r.severity || 'medium',
         probability: r.probability || 50,
         category:    r.category || 'planning',
+        impact:      r.impact || 3,
         status:      'active',
         aiDetected:  true,
         actions:     r.actions || [],
+        history:     [{ action: 'ai_detected', status: 'active', label: 'Risque detecte par IA', at: new Date() }]
       }))
     );
 
@@ -89,9 +98,9 @@ router.put('/:id/resolve', auth, async (req, res) => {
   try {
     const risk = await Risk.findByIdAndUpdate(
       req.params.id,
-      { status: 'resolved' },
+      { status: 'resolved', $push: { history: { action: 'resolved', status: 'resolved', label: 'Risque resolu', at: new Date() } } },
       { new: true }
-    );
+    ).populate('projectId', 'name methodology');
     if (!risk) return res.status(404).json({ message: 'Risque non trouvé' });
     res.json(risk);
   } catch (err) {
@@ -104,9 +113,9 @@ router.put('/:id/ignore', auth, async (req, res) => {
   try {
     const risk = await Risk.findByIdAndUpdate(
       req.params.id,
-      { status: 'ignored' },
+      { status: 'ignored', $push: { history: { action: 'ignored', status: 'ignored', label: 'Risque ignore', at: new Date() } } },
       { new: true }
-    );
+    ).populate('projectId', 'name methodology');
     res.json(risk);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -117,8 +126,10 @@ router.put('/:id/ignore', auth, async (req, res) => {
 router.put('/:id', auth, async (req, res) => {
   try {
     const risk = await Risk.findByIdAndUpdate(
-      req.params.id, req.body, { new: true }
-    );
+      req.params.id,
+      { ...req.body, $push: { history: { action: 'updated', status: req.body.status, label: 'Risque modifie', at: new Date() } } },
+      { new: true }
+    ).populate('projectId', 'name methodology');
     res.json(risk);
   } catch (err) {
     res.status(500).json({ message: err.message });

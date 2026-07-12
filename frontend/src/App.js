@@ -1,7 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LocaleProvider } from './context/LocaleContext'; // ✅ لازم
+import { LocaleProvider } from './context/LocaleContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 import Login         from './pages/Login';
 import Signup        from './pages/Signup';
@@ -39,10 +40,11 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <LocaleProvider> {/* ✅ مهم */}
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
+    <ThemeProvider>
+      <LocaleProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Routes>
             <Route path="/login"  element={<Login />} />
             <Route path="/signup" element={<Signup />} />
 
@@ -64,10 +66,11 @@ export default function App() {
               <Route path="profile" element={<Profile />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </LocaleProvider>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </LocaleProvider>
+    </ThemeProvider>
   );
 }

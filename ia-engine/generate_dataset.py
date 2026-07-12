@@ -1,5 +1,5 @@
 """
-ProAI — Génération Dataset v2
+PREDYNEX — Génération Dataset v2
 2000 projets · 17 features · 4 targets
 
 Commande : python generate_dataset.py

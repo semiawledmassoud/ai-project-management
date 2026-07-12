@@ -1,5 +1,5 @@
 """
-ProAI — Entraînement des 4 modèles ML
+PREDYNEX — Entraînement des 4 modèles ML
 ======================================
 Commande : python train_model.py
 

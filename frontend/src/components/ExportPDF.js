@@ -7,7 +7,7 @@ export default function ExportPDF({ project, analysis }) {
     setLoading(true);
 
     const content = `
-RAPPORT PROAI — ${project?.name}
+RAPPORT PREDYNEX — ${project?.name}
 Généré le ${new Date().toLocaleDateString('fr-FR')}
 ${'='.repeat(50)}
 
@@ -55,14 +55,14 @@ R² Score  : 0.863
 Précision : 88.5%
 Dataset   : 1000 projets analysés
 
-Rapport généré par ProAI v2.4
+Rapport généré par PREDYNEX v2.4
     `;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ProAI_Rapport_${project?.name?.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
+    a.download = `PREDYNEX_Rapport_${project?.name?.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

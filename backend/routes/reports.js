@@ -69,7 +69,7 @@ router.get('/weekly/download', auth, async (req, res) => {
     const avgScore = projects.length ? (projects.reduce((s,p) => s+p.aiScore,0)/projects.length).toFixed(1) : 0;
     const now = new Date();
 
-    let content = `RAPPORT HEBDOMADAIRE PROAI\n`;
+    let content = `RAPPORT HEBDOMADAIRE PREDYNEX\n`;
     content += `Semaine du ${now.toLocaleDateString('fr-FR')}\n`;
     content += `${'='.repeat(50)}\n\n`;
     content += `RÉSUMÉ EXÉCUTIF\n${'-'.repeat(30)}\n`;
@@ -90,10 +90,10 @@ router.get('/weekly/download', auth, async (req, res) => {
       content += `${i+1}. [${r.severity.toUpperCase()}] ${r.title}\n`;
       content += `   Projet: ${r.projectId?.name} | Probabilité: ${r.probability}%\n`;
     });
-    content += `\n${'='.repeat(50)}\nGénéré par ProAI v2.0`;
+    content += `\n${'='.repeat(50)}\nGénéré par PREDYNEX v2.0`;
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="ProAI_Rapport_${now.toISOString().slice(0,10)}.txt"`);
+    res.setHeader('Content-Disposition', `attachment; filename="PREDYNEX_Rapport_${now.toISOString().slice(0,10)}.txt"`);
     res.send(content);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });

@@ -40,19 +40,36 @@ export default function Analysis() {
   const card = {
     background: '#131620',
     border: '1px solid #252A3D',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: '16px 20px',
-    marginBottom: 16
+    marginBottom: 16,
+    boxShadow: '0 8px 24px rgba(2, 6, 23, 0.25)'
   };
 
   const scoreColor = (s) => s >= 7 ? '#34D399' : s >= 5 ? '#F59E0B' : '#F87171';
+  const healthStatusColor = (status) => status === 'healthy' ? '#34D399' : status === 'warning' ? '#F59E0B' : '#F87171';
+
+  // Calcule le score "Budget ctrl" — compare consommation vs avancement réel,
+  // exactement la même formule que le backend (build_explainable_factors).
+  // Multiplicateur et plafond resserrés (5.5 / 9) pour éviter les scores
+  // artificiellement gonflés (proches de 10) sur des projets juste "corrects".
+  const computeBudgetScore = (project) => {
+    const budgetRatio = project.budgetUsed / Math.max(project.budget, 1);
+    const progressRatio = project.progress / 100;
+    if (progressRatio <= 0.02) {
+      return budgetRatio <= 0.1 ? 5 : 2;
+    }
+    const efficiency = progressRatio / Math.max(budgetRatio, 0.01);
+    return Math.min(9, Math.max(0, efficiency * 5.5));
+  };
 
   // Radar chart SVG
   const RadarChart = ({ project }) => {
     if (!project) return null;
+    const budgetScore = computeBudgetScore(project);
     const metrics = [
       { label: 'Progression', value: project.progress / 10 },
-      { label: 'Budget', value: Math.max(0, 10 - (project.budgetUsed / Math.max(project.budget, 1)) * 10) },
+      { label: 'Budget', value: budgetScore },
       { label: 'Vélocité', value: Math.min(project.velocity / 10, 10) },
       { label: 'Équipe', value: Math.min(project.teamSize / 2, 10) },
       { label: 'Score IA', value: project.aiScore },
@@ -218,7 +235,7 @@ export default function Analysis() {
         <div>
           <h1 style={{ fontSize: 22, fontWeight: 700 }}>{t('analysis', 'Analyse IA')}</h1>
           <p style={{ color: '#5C6490', fontSize: 13, marginTop: 4 }}>
-            {t('aiRecommendations', 'Analyse prédictive')} · Modèle RandomForest + GradientBoosting · R²=0.863
+            Analyse prédictive orientée décision · Résultats mis à jour à partir des indicateurs projet
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -275,14 +292,14 @@ export default function Analysis() {
           <div>
             {/* Score + Prédictions */}
             <div style={card}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
-                <div style={{ textAlign: 'center', background: '#1A1D28', borderRadius: 12, padding: '16px 24px', border: `2px solid ${scoreColor(selected.aiScore)}44` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div style={{ textAlign: 'center', background: '#1A1D28', borderRadius: 16, padding: '16px 24px', border: `2px solid ${scoreColor(selected.aiScore)}44`, minWidth: 140 }}>
                   <div style={{ fontSize: 40, fontWeight: 700, color: scoreColor(selected.aiScore), fontFamily: 'monospace' }}>
                     {selected.aiScore}
                   </div>
                   <div style={{ fontSize: 11, color: '#5C6490' }}>Score IA / 10</div>
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 240 }}>
                   <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{selected.name}</div>
                   <div style={{ fontSize: 12, color: '#5C6490', marginBottom: 12 }}>
                     {selected.methodology} · {selected.teamSize} membres · Budget {selected.budget?.toLocaleString()}€
@@ -304,26 +321,49 @@ export default function Analysis() {
               </div>
 
               {analysis && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid rgba(248,113,113,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: '#F87171', fontFamily: 'monospace' }}>
-                      {analysis.predictions?.delayProbability}%
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Probabilité retard</div>
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>Santé du projet</div>
+                    <span style={{ padding: '6px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, color: healthStatusColor(analysis.healthStatus), background: `${healthStatusColor(analysis.healthStatus)}22`, border: `1px solid ${healthStatusColor(analysis.healthStatus)}44` }}>
+                      {analysis.healthStatus === 'healthy' ? 'Sain' : analysis.healthStatus === 'warning' ? 'À surveiller' : 'Critique'}
+                    </span>
                   </div>
-                  <div style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: '#F59E0B', fontFamily: 'monospace' }}>
-                      +{analysis.predictions?.budgetOverrun}%
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 12, marginBottom: 12 }}>
+                    <div style={{ background: 'linear-gradient(135deg, rgba(79,143,255,.12), rgba(167,139,250,.08))', border: '1px solid rgba(79,143,255,.18)', borderRadius: 12, padding: 14 }}>
+                      <div style={{ fontSize: 12, color: '#9BA3C8', marginBottom: 6 }}>Score de santé global</div>
+                      <div style={{ fontSize: 34, fontWeight: 700, color: '#E8EAF6' }}>{analysis.healthScore}/100</div>
+                      <div style={{ fontSize: 12, color: '#9BA3C8', marginTop: 6 }}>{analysis.healthSummary}</div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Dépassement budget</div>
-                  </div>
-                  <div style={{ background: 'rgba(79,143,255,.06)', border: '1px solid rgba(79,143,255,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 28, fontWeight: 700, color: '#4F8FFF', fontFamily: 'monospace' }}>
-                      +{analysis.predictions?.estimatedDelay}j
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid rgba(248,113,113,.15)', borderRadius: 8, padding: 10 }}>
+                        <div style={{ fontSize: 11, color: '#9BA3C8' }}>Probabilité retard</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: '#F87171' }}>{analysis.predictions?.delayProbability}%</div>
+                      </div>
+                      <div style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)', borderRadius: 8, padding: 10 }}>
+                        <div style={{ fontSize: 11, color: '#9BA3C8' }}>Budget consommé</div>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: '#F59E0B' }}>{Math.round((selected.budgetUsed/Math.max(selected.budget,1))*100)}%</div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Délai estimé</div>
                   </div>
-                </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: '#1A1D28', borderRadius: 10, padding: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Facteurs positifs</div>
+                      {analysis.positives?.length ? analysis.positives.map((item, idx) => (
+                        <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 6 }}>
+                          <span style={{ color: '#34D399', marginRight: 6 }}>✓</span>{item.label}: {item.detail}
+                        </div>
+                      )) : <div style={{ fontSize: 11, color: '#5C6490' }}>Aucun facteur positif particulier</div>}
+                    </div>
+                    <div style={{ background: '#1A1D28', borderRadius: 10, padding: 12 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Facteurs de risque</div>
+                      {analysis.negatives?.length ? analysis.negatives.map((item, idx) => (
+                        <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 6 }}>
+                          <span style={{ color: '#F87171', marginRight: 6 }}>⚠</span>{item.label}: {item.detail}
+                        </div>
+                      )) : <div style={{ fontSize: 11, color: '#5C6490' }}>Aucun facteur de risque majeur</div>}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
 
@@ -337,7 +377,7 @@ export default function Analysis() {
                 <div style={{ flex: 1 }}>
                   {[
                     ['Progression', selected.progress+'%', selected.progress/10],
-                    ['Budget ctrl', Math.max(0,Math.round(10-(selected.budgetUsed/Math.max(selected.budget,1))*10))+'/10', Math.max(0,10-(selected.budgetUsed/Math.max(selected.budget,1))*10)],
+                    ['Budget ctrl', computeBudgetScore(selected).toFixed(1)+'/10', computeBudgetScore(selected)],
                     ['Vélocité', Math.min(selected.velocity/10,10).toFixed(1)+'/10', Math.min(selected.velocity/10,10)],
                     ['Score IA', selected.aiScore+'/10', selected.aiScore],
                   ].map(([l,v,val]) => (
@@ -356,41 +396,30 @@ export default function Analysis() {
               </div>
             </div>
 
-            {/* Importance des variables */}
-            {analysis?.featureImportances && (
+            {/* Facteurs explicables — propres à ce projet (remplace RandomForest) */}
+            {analysis?.factors && (
               <div style={card}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 16 }}>
-                  Importance des variables — Modèle RandomForest
+                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                  Pourquoi ce score ? — Facteurs spécifiques à ce projet
                 </div>
-                {Object.entries(analysis.featureImportances)
-                  .sort((a,b) => b[1]-a[1])
-                  .slice(0,8)
-                  .map(([key, val], i) => {
-                    const labels = {
-                      budget_ratio:'Budget ratio', progress:'Progression',
-                      velocity:'Vélocité', overscoped:'Périmètre large',
-                      team_issues:'Problèmes équipe', open_tickets:'Tickets ouverts',
-                      absences:'Absences', scope_creep:'Scope creep',
-                      tech_debt:'Dette technique', team_size:'Taille équipe',
-                      methodology_enc:'Méthodologie', duration_planned:'Durée prévue'
-                    };
-                    const colors = ['#F87171','#F87171','#F59E0B','#F59E0B','#4F8FFF','#4F8FFF','#A78BFA','#34D399'];
-                    return (
-                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                        <div style={{ width: 18, fontSize: 10, color: '#5C6490', textAlign: 'right', fontFamily: 'monospace' }}>{i+1}</div>
-                        <div style={{ width: 140, fontSize: 12, color: '#9BA3C8' }}>{labels[key]||key}</div>
-                        <div style={{ flex: 1, height: 6, background: '#22263A', borderRadius: 3, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: (val*100/0.25*100)+'%', maxWidth:'100%', background: colors[i], borderRadius: 3 }} />
-                        </div>
-                        <div style={{ width: 40, textAlign: 'right', fontSize: 12, fontFamily: 'monospace', fontWeight: 600, color: colors[i] }}>
-                          {val.toFixed(3)}
-                        </div>
+                <div style={{ fontSize: 11, color: '#5C6490', marginBottom: 16 }}>
+                  Chaque facteur est calculé à partir des données réelles de ce projet, pas d'une moyenne de dataset.
+                </div>
+                {analysis.factors.map((f, i) => {
+                  const col = f.score >= 7 ? '#34D399' : f.score >= 5 ? '#F59E0B' : '#F87171';
+                  return (
+                    <div key={f.key || i} style={{ marginBottom: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <span style={{ fontSize: 12, color: '#E8EAF6', fontWeight: 600 }}>{f.label}</span>
+                        <span style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color: col }}>{f.score}/10</span>
                       </div>
-                    );
-                  })}
-                <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(79,143,255,.05)', borderRadius: 8, border: '1px solid rgba(79,143,255,.12)', fontSize: 11, color: '#9BA3C8' }}>
-                  ◈ Le modèle RandomForest identifie le <strong style={{ color: '#E8EAF6' }}>budget ratio et la progression</strong> comme facteurs principaux du score IA.
-                </div>
+                      <div style={{ height: 6, background: '#22263A', borderRadius: 3, overflow: 'hidden', marginBottom: 4 }}>
+                        <div style={{ height: '100%', width: (f.score*10)+'%', background: col, borderRadius: 3 }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9BA3C8' }}>{f.detail}</div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -438,23 +467,35 @@ export default function Analysis() {
                   Recommandations IA ({analysis.recommendations.length})
                 </div>
                 {analysis.recommendations.map((r, i) => (
-                  <div key={i} style={{ padding: '12px 14px', background: '#1A1D28', borderRadius: 8, marginBottom: 8, borderLeft: '3px solid #4F8FFF' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <div key={i} style={{ padding: '14px', background: '#1A1D28', borderRadius: 10, marginBottom: 10, borderLeft: '3px solid #4F8FFF' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
                       <div style={{ fontSize: 13, fontWeight: 600 }}>{r.title}</div>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <span style={{ fontSize: 10, color: r.priority==='urgent'?'#F87171':'#F59E0B',
-                          background: `rgba(${r.priority==='urgent'?'248,113,113':'245,158,11'},.1)`,
-                          padding: '2px 7px', borderRadius: 4, fontFamily: 'monospace' }}>
+                        <span style={{ fontSize: 10, color: r.priority==='urgent'?'#F87171':'#F59E0B', background: `rgba(${r.priority==='urgent'?'248,113,113':'245,158,11'},.1)`, padding: '2px 7px', borderRadius: 4, fontFamily: 'monospace' }}>
                           {(r.priority||'medium').toUpperCase()}
                         </span>
-                        <span style={{ fontSize: 10, color: '#34D399', fontFamily: 'monospace' }}>
-                          {r.confidence}%
-                        </span>
+                        {typeof r.confidence === 'number' && (
+                          <span style={{ fontSize: 10, color: '#34D399', fontFamily: 'monospace' }}>
+                            {r.confidence}%
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: '#9BA3C8', marginBottom: 6 }}>{r.description}</div>
-                    <div style={{ fontSize: 11, color: '#4F8FFF', marginBottom: 3 }}>→ {r.impact}</div>
-                    {r.effort && <div style={{ fontSize: 11, color: '#5C6490' }}>Effort : {r.effort}</div>}
+                    <div style={{ fontSize: 12, color: '#9BA3C8', marginBottom: 8 }}>{r.projectStatus}</div>
+                    <div style={{ fontSize: 12, color: '#E8EAF6', marginBottom: 8 }}><strong>Analyse :</strong> {r.analysis}</div>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#34D399', marginBottom: 4 }}>Forces</div>
+                      {r.strengths?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>• {item}</div>)}
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#F59E0B', marginBottom: 4 }}>Faiblesses</div>
+                      {r.weaknesses?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>• {item}</div>)}
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 600, color: '#4F8FFF', marginBottom: 4 }}>Actions recommandées</div>
+                      {r.recommendedActions?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>→ {item}</div>)}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#5C6490' }}>Impact : {r.impact} · Effort : {r.effort}</div>
                   </div>
                 ))}
               </div>
@@ -470,16 +511,16 @@ export default function Analysis() {
               </div>
               <div style={{ background: 'linear-gradient(135deg,rgba(79,143,255,.08),rgba(167,139,250,.08))', border: '1px solid rgba(79,143,255,.15)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
                 <div style={{ fontSize: 10, color: '#5C6490', fontFamily: 'monospace', marginBottom: 4 }}>MODÈLE ACTIF</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#4F8FFF' }}>ProAI RandomForest v2.4</div>
-                <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 2 }}>scikit-learn · 1000 projets</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#4F8FFF' }}>Analyse de santé PREDYNEX</div>
+                <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 2 }}>Moteur décisionnel piloté par votre contexte projet</div>
               </div>
               {[
-                ['R² Score', '0.863', '#34D399'],
-                ['MAE', '0.563', '#4F8FFF'],
-                ['Précision', '88.5%', '#A78BFA'],
-                ['CV R²', '0.868 ± 0.021', '#F59E0B'],
-                ['Features', '12 variables', '#9BA3C8'],
-                ['Latence', '< 50ms', '#22D3EE'],
+                ['Confiance', 'Élevée', '#34D399'],
+                ['Actualisation', 'Temps réel', '#4F8FFF'],
+                ['Portée', 'Tous projets', '#A78BFA'],
+                ['Mise à jour', 'Hebdo', '#F59E0B'],
+                ['Signal principal', 'Santé projet', '#9BA3C8'],
+                ['Temps d\'analyse', '< 1 min', '#22D3EE'],
               ].map(([l,v,c]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid #252A3D', fontSize: 12 }}>
                   <span style={{ color: '#9BA3C8' }}>{l}</span>
@@ -497,7 +538,7 @@ export default function Analysis() {
                     color: analysis.successProbability >= 60 ? '#34D399' : analysis.successProbability >= 40 ? '#F59E0B' : '#F87171' }}>
                     {Math.round(analysis.successProbability)}%
                   </div>
-                  <div style={{ fontSize: 11, color: '#5C6490' }}>Classification GradientBoosting</div>
+                  <div style={{ fontSize: 11, color: '#5C6490' }}>Probabilité de succès projet</div>
                 </div>
                 <div style={{ height: 8, background: '#22263A', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: analysis.successProbability+'%', borderRadius: 4,

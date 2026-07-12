@@ -22,7 +22,7 @@ export default function Reports() {
     const blob = new Blob([JSON.stringify(report, null, 2)], {type:'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `ProAI_Report_${new Date().toISOString().slice(0,10)}.json`;
+    a.href = url; a.download = `PREDYNEX_Report_${new Date().toISOString().slice(0,10)}.json`;
     a.click(); URL.revokeObjectURL(url);
   };
 
@@ -37,9 +37,9 @@ export default function Reports() {
       {/* Header */}
       <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:20}}>
         <div>
-          <h1 style={{fontSize:22, fontWeight:700}}>📊 Rapport hebdomadaire</h1>
+          <h1 style={{fontSize:22, fontWeight:700}}>📊 Rapport exécutif hebdomadaire</h1>
           <p style={{color:'#5C6490', fontSize:13, marginTop:4}}>
-            Semaine {report.weekNumber} · Généré le {new Date(report.generatedAt).toLocaleDateString('fr-FR')}
+            Synthèse de la semaine {report.weekNumber} · Mise à jour automatique à partir des projets suivis
           </p>
         </div>
         <div style={{display:'flex', gap:8}}>
@@ -158,7 +158,7 @@ export default function Reports() {
       <div style={{...card, background:'rgba(79,143,255,.04)', border:'1px solid rgba(79,143,255,.1)', textAlign:'center'}}>
         <div style={{fontSize:11, color:'#5C6490'}}>
           Période analysée : {new Date(report.period.from).toLocaleDateString('fr-FR')} → {new Date(report.period.to).toLocaleDateString('fr-FR')}
-          {' · '}Rapport généré automatiquement par ProAI v2.0
+          {' · '}Synthèse disponible en export PDF, JSON ou texte
         </div>
       </div>
     </div>

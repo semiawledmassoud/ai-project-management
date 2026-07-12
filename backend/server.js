@@ -22,6 +22,8 @@ try { app.use('/api/comments', require('./routes/comments')); console.log('✅ c
 try { app.use('/api/team',     require('./routes/team'));     console.log('✅ team'); }     catch(e) { console.log('⚠️ team manquant'); }
 try { app.use('/api/history',  require('./routes/history'));  console.log('✅ history'); }  catch(e) { console.log('⚠️ history manquant'); }
 try { app.use('/api/alerts',   require('./routes/alerts'));   console.log('✅ alerts'); }   catch(e) { console.log('⚠️ alerts manquant'); }
+try { app.use('/api/tasks',    require('./routes/tasks'));    console.log('✅ tasks'); }     catch(e) { console.log('⚠️ tasks manquant'); }
+try { app.use('/api/reports',  require('./routes/reports'));  console.log('✅ reports'); }   catch(e) { console.log('⚠️ reports manquant'); }
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('✅ MongoDB connecté'))

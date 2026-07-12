@@ -16,6 +16,9 @@ export default function ProjectDetail() {
   const [newComment, setNewComment] = useState('');
   const [showMemberForm, setShowMemberForm] = useState(false);
   const [memberForm, setMemberForm] = useState({ name: '', role: '', email: '', workload: 80 });
+  const [tasks, setTasks] = useState([]);
+  const [taskForm, setTaskForm] = useState({ title: '', priority: 'medium', status: 'planned' });
+  const [showTaskForm, setShowTaskForm] = useState(false);
   const { t } = useLocale();
 
   // ── Chargement projet + analyse IA ─────────────────────────────────────────
@@ -63,9 +66,11 @@ export default function ProjectDetail() {
         API.get(`/team/${id}`).catch(() => ({ data: [] })),
         API.get(`/history/${id}`).catch(() => ({ data: [] }))
       ]);
+      const taskRes = await API.get(`/tasks/${id}`).catch(() => ({ data: [] }));
       setComments(cRes.data);
       setTeam(tRes.data);
       setHistory(hRes.data);
+      setTasks(taskRes.data || []);
     } catch (err) {
       console.error(err);
     }
@@ -114,6 +119,45 @@ export default function ProjectDetail() {
     setTeam(team.filter(m => m._id !== mid));
   };
 
+  const addTask = async (e) => {
+    e.preventDefault();
+    if (!taskForm.title.trim()) return;
+    try {
+      const res = await API.post(`/tasks/${id}`, {
+        title: taskForm.title.trim(),
+        priority: taskForm.priority,
+        status: taskForm.status
+      });
+      setTasks([res.data, ...tasks]);
+      setTaskForm({ title: '', priority: 'medium', status: 'planned' });
+      setShowTaskForm(false);
+      API.post(`/history/${id}`, { action: 'Tâche ajoutée', newValue: res.data.title }).catch(() => {});
+    } catch (err) {
+      alert('Erreur tâche: ' + err.message);
+    }
+  };
+
+  const toggleTaskStatus = async (taskId) => {
+    const task = tasks.find(t => t._id === taskId);
+    if (!task) return;
+    const nextStatus = task.status === 'done' ? 'planned' : 'done';
+    try {
+      const res = await API.put(`/tasks/${taskId}`, { status: nextStatus });
+      setTasks(tasks.map(t => t._id === taskId ? res.data : t));
+    } catch (err) {
+      alert('Erreur mise à jour tâche: ' + err.message);
+    }
+  };
+
+  const delTask = async (taskId) => {
+    try {
+      await API.delete(`/tasks/${taskId}`);
+      setTasks(tasks.filter(task => task._id !== taskId));
+    } catch (err) {
+      alert('Erreur suppression tâche: ' + err.message);
+    }
+  };
+
   const timeAgo = (date) => {
     const d = Date.now() - new Date(date);
     const m = Math.floor(d / 60000);
@@ -126,7 +170,7 @@ export default function ProjectDetail() {
 
   // ── Export rapport ────────────────────────────────────────────────────────
   const exportRapport = () => {
-    const content = `RAPPORT PROAI — ${project?.name}
+    const content = `RAPPORT PREDYNEX — ${project?.name}
 Généré le ${new Date().toLocaleDateString('fr-FR')}
 ${'='.repeat(50)}
 
@@ -161,13 +205,13 @@ ${analysis?.recommendations?.map((r, i) => `${i + 1}. ${r.title}
 ${'─'.repeat(30)}
 ${team.map(m => `- ${m.name} (${m.role}) — Charge: ${m.workload}%`).join('\n') || 'Aucun membre'}
 
-Rapport généré par ProAI v2.0`;
+Rapport généré par PREDYNEX v2.0`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `ProAI_${project?.name?.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
+    a.download = `PREDYNEX_${project?.name?.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -180,7 +224,8 @@ Rapport généré par ProAI v2.0`;
 
   const score = project.aiScore;
   const col   = score >= 7 ? '#34D399' : score >= 5 ? '#F59E0B' : '#F87171';
-  const card  = { background: '#131620', border: '1px solid #252A3D', borderRadius: 12, padding: '16px 20px', marginBottom: 16 };
+  const card  = { background: '#131620', border: '1px solid #252A3D', borderRadius: 16, padding: '16px 20px', marginBottom: 16, boxShadow: '0 8px 24px rgba(2, 6, 23, 0.25)' };
+  const healthStatusColor = (status) => status === 'healthy' ? '#34D399' : status === 'warning' ? '#F59E0B' : '#F87171';
   const inp   = { width: '100%', background: '#1A1D28', border: '1px solid #252A3D', borderRadius: 8, padding: '9px 12px', color: '#E8EAF6', fontSize: 13, outline: 'none' };
 
   const tabs = [
@@ -188,6 +233,7 @@ Rapport généré par ProAI v2.0`;
     { id: 'risks',     label: `⚠️ ${t('risks', 'Risques')} ${analysis?.risks?.length ? `(${analysis.risks.length})` : ''}` },
     { id: 'recs',      label: `💡 ${t('recommendations', 'Recommandations')}` },
     { id: 'team',      label: `👥 ${t('projects', 'Équipe')} (${team.length})` },
+    { id: 'tasks',     label: `✅ Plan d'action (${tasks.length})` },
     { id: 'comments',  label: `💬 ${t('quickActions', 'Commentaires')} (${comments.length})` },
     { id: 'history',   label: '📜 Historique' },
   ];
@@ -262,30 +308,41 @@ Rapport généré par ProAI v2.0`;
             {/* Prédictions */}
             {analysis && (
               <div style={card}>
-                <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 14 }}>
-                  Prédictions IA
-                  <span style={{ fontSize: 10, color: '#34D399', marginLeft: 8, fontFamily: 'monospace' }}>
-                    R²=0.865 | Acc=89%
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>Analyse de santé</div>
+                  <span style={{ padding: '6px 10px', borderRadius: 999, fontSize: 11, fontWeight: 700, color: healthStatusColor(analysis.healthStatus), background: `${healthStatusColor(analysis.healthStatus)}22`, border: `1px solid ${healthStatusColor(analysis.healthStatus)}44` }}>
+                    {analysis.healthStatus === 'healthy' ? 'Sain' : analysis.healthStatus === 'warning' ? 'À surveiller' : 'Critique'}
                   </span>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid rgba(248,113,113,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: '#F87171', fontFamily: 'monospace' }}>
-                      {analysis.predictions?.delayProbability}%
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Probabilité retard</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 10 }}>
+                  <div style={{ background: 'linear-gradient(135deg, rgba(79,143,255,.12), rgba(167,139,250,.08))', border: '1px solid rgba(79,143,255,.18)', borderRadius: 12, padding: 14 }}>
+                    <div style={{ fontSize: 12, color: '#9BA3C8', marginBottom: 6 }}>Score de santé</div>
+                    <div style={{ fontSize: 32, fontWeight: 700, color: '#E8EAF6' }}>{analysis.healthScore}/100</div>
+                    <div style={{ fontSize: 12, color: '#9BA3C8', marginTop: 6 }}>{analysis.healthSummary}</div>
                   </div>
-                  <div style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: '#F59E0B', fontFamily: 'monospace' }}>
-                      +{analysis.predictions?.budgetOverrun}%
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    <div style={{ background: 'rgba(248,113,113,.06)', border: '1px solid rgba(248,113,113,.15)', borderRadius: 8, padding: 10 }}>
+                      <div style={{ fontSize: 11, color: '#9BA3C8' }}>Retard</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#F87171' }}>{analysis.predictions?.delayProbability}%</div>
                     </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Dépassement budget</div>
+                    <div style={{ background: 'rgba(245,158,11,.06)', border: '1px solid rgba(245,158,11,.15)', borderRadius: 8, padding: 10 }}>
+                      <div style={{ fontSize: 11, color: '#9BA3C8' }}>Budget</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: '#F59E0B' }}>{Math.round((project.budgetUsed / Math.max(project.budget, 1)) * 100)}%</div>
+                    </div>
                   </div>
-                  <div style={{ background: 'rgba(79,143,255,.06)', border: '1px solid rgba(79,143,255,.15)', borderRadius: 8, padding: 14, textAlign: 'center' }}>
-                    <div style={{ fontSize: 26, fontWeight: 700, color: '#4F8FFF', fontFamily: 'monospace' }}>
-                      +{analysis.predictions?.estimatedDelay}j
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9BA3C8', marginTop: 4 }}>Délai estimé</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 10 }}>
+                  <div style={{ background: '#1A1D28', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Facteurs positifs</div>
+                    {analysis.positives?.length ? analysis.positives.map((item, idx) => (
+                      <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 6 }}><span style={{ color: '#34D399', marginRight: 6 }}>✓</span>{item.label}: {item.detail}</div>
+                    )) : <div style={{ fontSize: 11, color: '#5C6490' }}>Aucun facteur positif particulier</div>}
+                  </div>
+                  <div style={{ background: '#1A1D28', borderRadius: 10, padding: 12 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8 }}>Facteurs de risque</div>
+                    {analysis.negatives?.length ? analysis.negatives.map((item, idx) => (
+                      <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 6 }}><span style={{ color: '#F87171', marginRight: 6 }}>⚠</span>{item.label}: {item.detail}</div>
+                    )) : <div style={{ fontSize: 11, color: '#5C6490' }}>Aucun facteur de risque majeur</div>}
                   </div>
                 </div>
               </div>
@@ -396,7 +453,7 @@ Rapport généré par ProAI v2.0`;
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>
             Recommandations IA ({analysis?.recommendations?.length || 0})
             <span style={{ fontSize: 11, color: '#5C6490', marginLeft: 8, fontWeight: 400 }}>
-              Basées sur le modèle ML et 2000 projets analysés
+              Basées sur les indicateurs projet et les risques détectés
             </span>
           </div>
           {!analysis ? (
@@ -408,33 +465,34 @@ Rapport généré par ProAI v2.0`;
               const priorityColor = { urgent: '#F87171', high: '#F59E0B', medium: '#4F8FFF', low: '#34D399' };
               return (
                 <div key={i} style={{ ...card, borderLeft: '3px solid #4F8FFF' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'monospace',
-                        background: `rgba(${r.priority === 'urgent' ? '248,113,113' : '79,143,255'},.12)`,
-                        color: priorityColor[r.priority] || '#4F8FFF', padding: '2px 8px', borderRadius: 5 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, fontFamily: 'monospace', background: `rgba(${r.priority === 'urgent' ? '248,113,113' : '79,143,255'},.12)`, color: priorityColor[r.priority] || '#4F8FFF', padding: '2px 8px', borderRadius: 5 }}>
                         {(r.priority || 'medium').toUpperCase()}
                       </span>
-                      {r.ml_basis && (
-                        <span style={{ fontSize: 10, background: 'rgba(167,139,250,.1)', color: '#A78BFA', padding: '2px 7px', borderRadius: 5 }}>
-                          ◈ ML
-                        </span>
-                      )}
                     </div>
-                    <span style={{ fontSize: 11, color: '#34D399', fontFamily: 'monospace', fontWeight: 600 }}>
-                      Confiance {r.confidence}%
-                    </span>
+                    {typeof r.confidence === 'number' && (
+                      <span style={{ fontSize: 11, color: '#34D399', fontFamily: 'monospace', fontWeight: 600 }}>
+                        Confiance {r.confidence}%
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>{r.title}</div>
-                  <div style={{ fontSize: 12, color: '#9BA3C8', lineHeight: 1.5, marginBottom: 6 }}>
-                    {t('detailedDescription', 'Description détaillée')}: {r.description || t('noData', 'Aucune donnée disponible')}
+                  <div style={{ fontSize: 12, color: '#9BA3C8', lineHeight: 1.5, marginBottom: 8 }}>{r.projectStatus}</div>
+                  <div style={{ fontSize: 12, color: '#E8EAF6', marginBottom: 8 }}><strong>Analyse :</strong> {r.analysis}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#34D399', marginBottom: 4 }}>Forces</div>
+                    {r.strengths?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>• {item}</div>)}
                   </div>
-                  <div style={{ fontSize: 12, color: '#4F8FFF', marginBottom: r.effort ? 4 : 0 }}>
-                    {t('aiRecommendations', 'Recommandation')} : {r.impact}
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#F59E0B', marginBottom: 4 }}>Faiblesses</div>
+                    {r.weaknesses?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>• {item}</div>)}
                   </div>
-                  {r.effort && <div style={{ fontSize: 11, color: '#5C6490' }}>{t('quickActions', 'Effort estimé')} : {r.effort}</div>}
-                  <div style={{ fontSize: 11, color: '#5C6490' }}>{t('projectHealth', 'Priorité')} : {r.priority || 'medium'}</div>
-                  {r.ml_basis && <div style={{ fontSize: 10, color: '#5C6490', marginTop: 4, fontFamily: 'monospace' }}>{t('analysis', 'Base ML')} : {r.ml_basis}</div>}
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: '#4F8FFF', marginBottom: 4 }}>Actions recommandées</div>
+                    {r.recommendedActions?.map((item, idx) => <div key={idx} style={{ fontSize: 11, color: '#9BA3C8', marginBottom: 3 }}>→ {item}</div>)}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#5C6490' }}>Impact : {r.impact} · Effort : {r.effort}</div>
                 </div>
               );
             })
@@ -508,6 +566,57 @@ Rapport généré par ProAI v2.0`;
               </div>
             ))
           )}
+        </div>
+      )}
+
+      {/* ── TAB: Tâches ─────────────────────────────────────────────────────── */}
+      {activeTab === 'tasks' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>Plan d'action du projet ({tasks.length})</div>
+            <button onClick={() => setShowTaskForm(!showTaskForm)} style={{ background: '#4F8FFF', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              {showTaskForm ? 'Annuler' : '+ Ajouter'}
+            </button>
+          </div>
+
+          {showTaskForm && (
+            <form onSubmit={addTask} style={{ ...card, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 0.8fr', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={{ fontSize: 11, color: '#9BA3C8', display: 'block', marginBottom: 4 }}>Tâche</label>
+                  <input style={inp} value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} required placeholder="Ex: Finaliser la revue budget" />
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: '#9BA3C8', display: 'block', marginBottom: 4 }}>Priorité</label>
+                  <select style={inp} value={taskForm.priority} onChange={e => setTaskForm({ ...taskForm, priority: e.target.value })}>
+                    {['low','medium','high','urgent'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: 11, color: '#9BA3C8', display: 'block', marginBottom: 4 }}>Statut</label>
+                  <select style={inp} value={taskForm.status} onChange={e => setTaskForm({ ...taskForm, status: e.target.value })}>
+                    {['planned','in-progress','done'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" style={{ background: '#34D399', color: '#0D0F14', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>✓ Enregistrer</button>
+            </form>
+          )}
+
+          {tasks.length === 0 ? (
+            <div style={{ textAlign: 'center', color: '#5C6490', padding: 40, background: '#131620', borderRadius: 12, border: '1px dashed #252A3D' }}>
+              Aucune tâche — ajoutez une action claire pour guider l'équipe.
+            </div>
+          ) : tasks.map(task => (
+            <div key={task.id} style={{ ...card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+              <button onClick={() => toggleTaskStatus(task.id)} style={{ border: 'none', background: task.status === 'done' ? '#34D399' : '#1A1D28', color: task.status === 'done' ? '#0D0F14' : '#9BA3C8', borderRadius: 999, width: 26, height: 26, cursor: 'pointer' }}>✓</button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: task.status === 'done' ? '#34D399' : '#E8EAF6', textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>{task.title}</div>
+                <div style={{ fontSize: 11, color: '#5C6490', marginTop: 3 }}>Priorité: {task.priority} · Statut: {task.status}</div>
+              </div>
+              <button onClick={() => delTask(task.id)} style={{ background: 'none', border: 'none', color: '#5C6490', cursor: 'pointer', fontSize: 14 }}>🗑</button>
+            </div>
+          ))}
         </div>
       )}
 
