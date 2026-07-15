@@ -195,7 +195,8 @@ Le moteur IA repose sur plusieurs modèles développés avec **Scikit-learn** pe
 ## 1. Cloner le projet
 
 ```bash
-git clone https://github.com/semiawledmassoud/predynex.git
+git clone https://github.com/semiawledmassoud/ai-project-management
+.git
 
 cd predynex
 ```
