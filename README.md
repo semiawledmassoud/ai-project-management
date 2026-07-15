@@ -1,6 +1,3 @@
-أكيد. هذا README احترافي، منظم، وما فيه حتى معلومات وهمية. كتبته بنفس أسلوب **La Brûlerie** و **TravelDream**، لكن مخصص لـ **PREDYNEX**.
-
-````markdown
 <div align="center">
 
 # 🧠 PREDYNEX
@@ -331,13 +328,3 @@ Ce projet est publié à des fins de démonstration de compétences en développ
 Développé par **Sami Awled Massoud**
 
 </div>
-````
-
-## ⭐ هذا أفضل من النسخة السابقة لأنه:
-
-* ✅ مختصر ومنظم.
-* ✅ احترافي.
-* ✅ ما فيه حتى أرقام يمكن يسألك عليها الـ Recruiter (Accuracy, R², MAE...).
-* ✅ يبرز المهارات (React + Node.js + Python + ML).
-* ✅ مناسب للـ GitHub والـ CV.
-* ✅ سهل القراءة وما فيهش معلومات زائدة.
